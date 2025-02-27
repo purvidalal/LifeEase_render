@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expandable Text Box UI</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <!-- Main Video Call Interface -->
+  <div class="video-call-container" id="mainInterface">
+    <!-- Settings button -->
+    <img id="settingsButton" class="settings-icon" src="/static/settingsicon.png" alt="Settings Icon" />
+
+    <!-- Three dots menu -->
+    <img id="menuButton" class="menu-icon" src="/static/dashboardicon.png" alt="Dashboard Icon" />
+
+    <div class="avatar"></div>
+    <div class="controls">
+      <div class="control-button" id="micButton" onclick="toggleMic()">
+        <img id="micIcon" src="static/mutemic.jpg" alt="Mute" />
+      </div>
+    </div>    
+
+    <!-- Text box below the mic button -->
+    <div class="text-box">
+      <span>Tap to type a message...</span>
+    </div>
+  </div>
+
+  <!-- Dashboard Interface -->
+  <div class="dashboard-interface" id="dashboardInterface">
+    <!-- Back arrow icon -->
+    <div class="back-arrow"></div>
+    <div class="dashboard-content">
+    
+    <!-- Title placed above the preview container -->
+    <h2 class="preview-title">1 year ago!</h2>
+
+        <!-- Main preview area that is always visible -->
+    <div class="preview-container">
+      <img src="/static/photoslogo.jpg" alt="Photos Preview" class="preview-image">
+    </div>
+      
+      <!-- Six Icon Tabs placed on the right side -->
+      <div class="icon-tabs">
+        <div class="icon-tab" id="whatsappIcon"><img src="/static/whatsapplogo.jpg" alt="WhatsApp"></div>
+        <div class="icon-tab" id="musicIcon"><img src="/static/musiclogo.jpg" alt="Music"></div>
+        <div class="icon-tab" id="youtubeIcon"><img src="/static/youtubelogo.jpg" alt="YouTube"></div>
+        <div class="icon-tab" id="photosIcon"><img src="/static/photoslogo.jpg" alt="Photos"></div>
+        <div class="icon-tab" id="newsIcon"><img src="/static/newslogo.jpg" alt="News"></div>
+        <div class="icon-tab" id="gamesIcon"><img src="/static/gameslogo.jpg" alt="Games"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Settings Interface -->
+  <div class="settings-interface" id="settingsInterface">
+    <!-- Back arrow icon -->
+    <div class="back-arrow"></div>
+    
+    <!-- Profile Picture Section -->
+    <div class="profile-section">
+      <img src="/static/image.jpg" alt="Profile Picture" class="profile-pic">
+      <p class="profile-name">Hi, Maya 👋</p>
+    </div>
+
+    <!-- Settings Menu -->
+    <div class="settings-menu">
+      <div class="settings-item">Account Management</div>
+      <div class="settings-item">Display & Accessibility</div>
+      <div class="settings-item">Language & Voice</div>
+      <div class="settings-item">About</div>
+      <div class="settings-item">Help</div>
+      <div class="settings-item logout">Logout</div>
+    </div>
+  </div>
+</body>
+</html>

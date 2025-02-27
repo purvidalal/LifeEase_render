@@ -1,0 +1,395 @@
+/* General body styling */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Video call container styling */
+.video-call-container {
+  position: relative;
+  width: 100%;
+  max-width: 450px;
+  height: 100%;
+  max-height: 700px;
+  background: #f4f0f0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  padding: 0;
+  z-index: 1;
+}
+
+/* Settings icon styling */
+.settings-icon {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 45px;
+  height: 45px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Menu icon styling */
+.menu-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Avatar image styling */
+.avatar {
+  width: 100%;
+  height: 100%;
+  background-image: url("/static/image.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+/* Control button styling */
+.controls {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.control-button {
+  width: 60px;
+  height: 60px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s;
+  overflow: hidden;
+}
+
+.control-button:hover {
+  background-color: #ddd;
+}
+
+.control-button img {
+  width: 110px;
+  height: 110px;
+}
+
+.control-button.muted {
+  background-color: #ff4d4d;
+}
+
+/* Small text box for prompts */
+.text-box {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  height: 30px;
+  background: #2b2b2b;
+  color: white;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Expanded text box */
+.text-box.expanded {
+  height: 90%;
+  width: 95%;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 20px;
+  border-radius: 10px;
+}
+/* Close button styling */
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  color: white;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.close-button:hover {
+  color: #ff4d4d;
+}
+
+/* Dashboard and settings styling */
+.dashboard-interface,
+.settings-interface {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 450px;
+  height: 100%;
+  max-height: 700px;
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+/* Dashboard content */
+.dashboard-content {
+  text-align: center;
+  padding: 20px;
+}
+
+/* Back arrow styling */
+.back-arrow {
+  position: absolute;
+  top: 30px;
+  left: 20px;
+  width: 40px;
+  height: 40px;
+  background-image: url('/static/backarrow.jpg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  z-index: 3;
+}
+
+/* Styling for the preview section */
+.preview-container {
+  position: absolute;
+  top: 15%;
+  left: 5%;
+  width: 60%;
+  height: 75%;
+  background-color: white;
+  border-radius: 0px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Preview text */
+.preview-title h2 {
+  font-size: 8px;
+  margin-bottom: 0px;
+  font-weight: bold;
+}
+
+/* Preview image */
+.preview-image {
+  width: 100px;
+  height: 100px;
+  margin-top: 10px;
+}
+
+/* Styling for the six icon tabs on the right side */
+.icon-tabs {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.icon-tab {
+  width: 80px;
+  height: 80px;
+  background-color: white;
+  border-radius: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.icon-tab img {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+}
+
+.icon-tab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Chat window */
+.chat-window {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  background: #2b2b2b;
+  height: calc(100% - 70px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+}
+
+/* Profile section in settings */
+.profile-section {
+  text-align: center;
+  margin-top: 50px;
+}
+
+.profile-pic {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #007bff;
+}
+
+.profile-name {
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* Settings menu */
+.settings-menu {
+  margin-top: 20px;
+}
+
+.settings-item {
+  background: #f1f1f1;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.settings-item:hover {
+  background: #e0e0e0;
+}
+
+/* Logout button */
+.logout {
+  background: #ff4d4d;
+  color: white;
+}
+
+.logout:hover {
+  background: #d83c3c;
+}
+
+/* Chat message styling */
+.chat-message {
+  padding: 10px 15px;
+  border-radius: 10px;
+  word-wrap: break-word;
+  margin: 0;
+  box-sizing: border-box;
+  max-width: 80%;
+}
+
+/* User message styling */
+.user-message {
+  background: #007bff;
+  color: white;
+  align-self: flex-end;
+  padding: 10px 15px;
+  max-width: 80%;
+  width: fit-content;
+  text-align: left;
+  border-radius: 10px;
+  border-top-right-radius: 0;
+  box-sizing: border-box;
+  margin-left: auto;
+}
+
+/* Bot message styling */
+.bot-message {
+  background: #f1f1f1;
+  color: black;
+  align-self: flex-start;
+  padding: 10px 15px;
+  max-width: 80%;
+  width: fit-content;
+  text-align: left;
+  border-radius: 10px;
+  border-top-left-radius: 0;
+  box-sizing: border-box;
+  margin-right: auto;
+}
+
+/* Chat input styling */
+.chat-input {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  padding: 10px;
+  background: #2b2b2b;
+  box-sizing: border-box;
+}
+
+/* Chat input field styling */
+.chat-input input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Chat input button styling */
+.chat-input button {
+  padding: 10px 15px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.chat-input button:hover {
+  background: #0056b3;
+}
