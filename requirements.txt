@@ -6,3 +6,4 @@ pandas==2.2.3
 numpy==1.26.4
 openai==1.59.8
 setuptools==69.1.1
+gunicorn==21.2.0
