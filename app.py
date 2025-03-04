@@ -107,3 +107,24 @@ def process_location():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))  # Default to 8080 if PORT is not set
     app.run(host="0.0.0.0", port=port, debug=True)
+
+from flask import request, Response
+
+# Replace with your desired username and password
+USERNAME = "Boaient"
+PASSWORD = "V@r#s*j$@2024"
+
+def check_auth(username, password):
+    return username == USERNAME and password == PASSWORD
+
+def authenticate():
+    return Response(
+        'Could not verify your access level for that URL.\n'
+        'You have to login with proper credentials.', 401,
+        {'WWW-Authenticate': 'Basic realm="Login Required"'})
+
+@app.before_request
+def require_authentication():
+    auth = request.authorization
+    if not auth or not check_auth(auth.username, auth.password):
+        return authenticate()
