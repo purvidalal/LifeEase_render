@@ -1,15 +1,12 @@
 import base64
-import threading
 import logging
 import os
-import re
 from flask import Flask, render_template, request, jsonify
 from stt_service import speech_to_text
 from emotion_service import detect_emotion
 from internal_query import generate_personalized_response
 from personal_info import load_personal_info
 from tts_service import text_to_speech
-from trigger import setup_triggers
 from external_query import handle_external_query
 from query_service import detect_query
 from medical_query import handle_medical_query
@@ -27,18 +24,6 @@ personal_info = load_personal_info()
 # **🔹 Global Variables**
 latest_location = None
 conversation_history = []  # Centralized conversation history
-scheduler_started = False  # Ensure scheduler runs only once
-
-# **🔹 Start Triggers in a Separate Thread**
-def start_triggers():
-    global scheduler_started
-    if not scheduler_started and os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        scheduler_started = True
-        setup_triggers()
-
-if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':  
-    trigger_thread = threading.Thread(target=start_triggers, daemon=True)
-    trigger_thread.start()
 
 @app.route('/')
 def index():
@@ -69,11 +54,7 @@ def process_audio():
             if entry["bot"] is None:
                 entry["bot"] = ""
 
-        # Attach user response to the latest bot message (if the last message was a trigger)
-        if conversation_history and conversation_history[-1]["user"] is None:
-            conversation_history[-1]["user"] = transcript
-        else:
-            conversation_history.append({"user": transcript, "bot": None})
+        conversation_history.append({"user": transcript, "bot": None})
 
         history = get_conversation_history()
         query_type = detect_query(transcript, history).strip("'\"")
@@ -99,48 +80,6 @@ def process_audio():
     except Exception as e:
         logging.error(f"Error processing audio: {e}")
         return jsonify({"error": "An internal error occurred."}), 500
-
-@app.route('/process-trigger-response', methods=['POST'])
-def process_trigger_response():
-    """
-    Stores trigger events in conversation history and generates natural responses.
-    """
-    try:
-        data = request.get_json()
-        trigger_message = data.get("prompt", "").strip()
-
-        if not trigger_message:
-            return jsonify({"response": "I didn't hear anything."}), 400
-
-        # Store the trigger event in the conversation history
-        conversation_history.append({"user": None, "bot": trigger_message})  # Store bot message
-
-
-        # Build conversation context
-        messages = [{"role": "system", "content": "You are LifeEase, a friendly AI assistant for elderly care."}]
-        for entry in conversation_history:
-            if entry["user"]:
-                messages.append({"role": "user", "content": entry["user"]})
-            if entry["bot"]:
-                messages.append({"role": "assistant", "content": entry["bot"]})
-
-        # Ensure no `None` values are sent
-        messages = [msg for msg in messages if msg["content"]]
-
-        logging.info(f"GPT-4 Request Messages: {messages}")
-
-        completion = client.chat.completions.create(model="gpt-4", messages=messages)
-        gpt_response = completion.choices[0].message.content.strip()
-
-        # Update conversation history with AI response
-        conversation_history[-1]["bot"] = gpt_response  # Attach response to the latest trigger
-
-        return jsonify({"response": gpt_response})
-
-    except Exception as e:
-        logging.error(f"❌ Error processing trigger response: {e}")
-        return jsonify({"error": "An error occurred."}), 500
-
 
 @app.route('/process-location', methods=['POST'])
 def process_location():
