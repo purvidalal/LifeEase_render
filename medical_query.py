@@ -1,5 +1,6 @@
 import os
 import logging
+import re
 from openai import OpenAI
 
 # Set up logging for debugging
@@ -16,6 +17,7 @@ MAX_CHARS = 500  # API input character limit
 def handle_medical_query(user_message, history=[]):
     """
     Process medical-related queries using GPT-4, while considering previous interactions.
+    Force the final output to only two sentences to keep responses short and step-by-step.
     """
     try:
         # Truncate the input if it exceeds the character limit
@@ -30,20 +32,27 @@ def handle_medical_query(user_message, history=[]):
 
         # Construct messages for GPT-4
         messages = [
-            {"role": "system", "content": (
-                "You are a medical assistant specialized in helping elderly users. "
-                "Provide empathetic, simple, and clear answers to medical questions. "
-                "Ensure the response is accurate and easy to understand. "
-                "Keep responses concise, within 150 words. "
-                "If additional professional consultation is needed, mention it clearly. "
-                "If symptoms were previously mentioned, recall them before answering. "
-                "Always ask clarifying questions."
-            )}
+            {
+                "role": "system",
+                "content": (
+                    "You are a medical assistant specialized in helping elderly users. "
+                    "You must keep your response to exactly two short sentences for any medical question. "
+                    "Sentence 1: Briefly acknowledge the user's concern. "
+                    "Sentence 2: Ask one clarifying question (or direct next step). "
+                    "Do not provide more than two sentences under any circumstance. "
+                    "If additional professional consultation is needed, mention it clearly, but still remain within two sentences. "
+                    "If symptoms were previously mentioned, recall them before answering. "
+                    "Always be empathetic and concise."
+                )
+            }
         ]
 
         # Include previous conversation history
         if conversation_context:
-            messages.append({"role": "system", "content": f"Previous medical discussion:\n{conversation_context}"})
+            messages.append({
+                "role": "system",
+                "content": f"Previous medical discussion:\n{conversation_context}"
+            })
 
         # Add current medical query
         messages.append({"role": "user", "content": f"Medical Question: {user_message}"})
@@ -51,14 +60,28 @@ def handle_medical_query(user_message, history=[]):
         # Call GPT-4 for response generation
         completion = client.chat.completions.create(
             model="gpt-4",
-            messages=messages
+            messages=messages,
+            max_tokens=60,   # Keep this small to discourage lengthy responses
+            temperature=0.7
         )
 
-        # Extract and return the response
-        medical_answer = completion.choices[0].message.content.strip()
+        # Extract the raw response
+        raw_response = completion.choices[0].message.content.strip()
+
+        # -- POST-PROCESSING: Forcibly truncate to TWO sentences --
+        # Split on sentence boundaries
+        sentences = re.split(r'(?<=[.?!])\s+', raw_response)
+        # Take only the first two sentences
+        truncated_sentences = sentences[:2]
+        # Rejoin them
+        medical_answer = " ".join(truncated_sentences).strip()
+
         logging.info("Medical query processed successfully.")
         return medical_answer
-    
+
     except Exception as e:
         logging.error(f"An error occurred while processing the query: {e}")
-        return "I'm sorry, I couldn't process your request. Please try again or consult a healthcare professional."
+        return (
+            "I'm sorry, I couldn't process your request. "
+            "Please try again or consult a healthcare professional."
+        )

@@ -16,22 +16,39 @@ def generate_personalized_response(user_input, personal_info, history=[]):
     personal_info_str = json.dumps(personal_info, ensure_ascii=False)
 
     # Extract last 3 user-bot interactions for context
-    conversation_context = "\n".join([f"User: {entry['user']}\nBot: {entry['bot']}" for entry in history[-3:]]) if history else ""
+    conversation_context = "\n".join(
+        [f"User: {entry['user']}\nBot: {entry['bot']}" for entry in history[-3:]]
+    ) if history else ""
 
-    # Construct messages for GPT-4
+    # Refined system instructions
     messages = [
-        {"role": "system", "content": (
-            "You are a helpful conversational companion for an elderly person. "
-            "Use personal details to provide a tailored response. "
-            "Do not be monotonous, and you do not have to always give a long answer. "
-            "Keep asking questions whenever necessary as you are a conversational companion."
-        )},
-        {"role": "system", "content": f"Here is some information about the user: {personal_info_str}"},
+        {
+            "role": "system",
+            "content": (
+                "You are a friendly and concise conversational companion for an elderly person. "
+                "If the user greets you with a short message (like 'hi' or 'hello'), reply with a brief greeting, "
+                "for example: 'Hello, [User's Name]. How is your day going so far?' "
+                "Do not add other personal details in your greeting unless the user explicitly asks. "
+                "When asked about your feelings (e.g., 'How are you?'), respond in a personable way "
+                "without mentioning that you're an AI (e.g., 'I'm doing well, thank you!'). "
+                "Use the provided personal details only if they are relevant to the user's question or request. "
+                "Keep responses short, avoid unnecessary elaboration, and ask follow-up questions when appropriate."
+            )
+        },
+        {
+            "role": "system",
+            "content": f"Here is some information about the user: {personal_info_str}"
+        },
     ]
 
     # Add conversation history if available
     if conversation_context:
-        messages.append({"role": "system", "content": f"Here is the recent conversation context:\n{conversation_context}"})
+        messages.append(
+            {
+                "role": "system",
+                "content": f"Here is the recent conversation context:\n{conversation_context}"
+            }
+        )
 
     # Add the current user query
     messages.append({"role": "user", "content": user_input})

@@ -13,6 +13,13 @@ client = OpenAI()
 GOOGLE_API_KEY = 'AIzaSyD-3fOpAz4oO01d27GUuomrjqEAifbCYDU'  # Replace with your Google API key
 GOOGLE_CX = '71a4cf86046244947'  # Replace with your Custom Search Engine ID
 
+# Function to detect language of the query (Hindi if any Devanagari character is found; otherwise English)
+def detect_language(query):
+    if re.search('[\u0900-\u097F]', query):
+        return "hi"
+    else:
+        return "en"
+
 # Function to classify the query using GPT-4
 def classify_query_with_gpt(query):
     try:
@@ -77,10 +84,7 @@ def classify_query_with_gpt(query):
         return {"error": "Failed to classify query with GPT-4."}
 
 # Function to get current time for a location
-from datetime import datetime
-import pytz
-
-def get_time(location, timezone):
+def get_time(location, timezone, lang="hi"):
     """
     Fetches the current time in a given timezone and formats it.
     Converts 24-hour time to 12-hour format and separates hours and minutes.
@@ -103,15 +107,21 @@ def get_time(location, timezone):
         # Debugging output
         print(f"Time for timezone '{timezone}': {hours_24}:{minutes}:{seconds} ({hours_12} {am_pm})")
 
-        # Return formatted time
-        return f"{location} का वर्तमान समय {hours_12}:{minutes} {am_pm} है।"
+        # Return formatted time based on language
+        if lang == "en":
+            return f"The current time in {location} is {hours_12}:{minutes} {am_pm}."
+        else:
+            return f"{location} का वर्तमान समय {hours_12}:{minutes} {am_pm} है।"
     
     except Exception as e:
         print("Error fetching time:", e)
-        return "समय का पता लगाने में समस्या हुई। कृपया पुनः प्रयास करें।"
+        if lang == "en":
+            return "There was a problem fetching the time. Please try again."
+        else:
+            return "समय का पता लगाने में समस्या हुई। कृपया पुनः प्रयास करें।"
 
 # Function to get weather details
-def get_weather(location_name, country_hint="India"):
+def get_weather(location_name, country_hint="India", lang="hi"):
     """
     Fetches current weather information for a given location using WeatherAPI and ensures accuracy by specifying a country.
     
@@ -120,7 +130,7 @@ def get_weather(location_name, country_hint="India"):
         country_hint (str): The country to narrow down the search (default: "India").
     
     Returns:
-        str: A formatted weather report in Hindi or an error message.
+        str: A formatted weather report in Hindi or English or an error message.
     """
     api_key = "7107fce10c2049fd808171110242511"
     base_url = "http://api.weatherapi.com/v1/current.json"
@@ -150,38 +160,52 @@ def get_weather(location_name, country_hint="India"):
         humidity = data["current"]["humidity"]
         wind_kph = data["current"]["wind_kph"]
         
-        # Translate weather condition to Hindi (simple mapping for demo)
-        condition_hindi = {
-            "Clear": "स्पष्ट",
-            "Partly cloudy": "आंशिक रूप से बादल",
-            "Cloudy": "बादल",
-            "Rain": "बारिश",
-            "Thunderstorm": "आंधी",
-            "Snow": "बर्फ",
-            "Sunny": "धूप"
-        }.get(condition, condition)  # Default to English if not found
-        
-        # Format the response in Hindi
-        weather_report = (
-            f"{location}, {country} का वर्तमान मौसम {condition_hindi} है। "
-            f"तापमान {temp_c}°C है, जो {feels_like_c}°C जैसा महसूस होता है। "
-            f"Humidity {humidity}% है और हवा की गति {wind_kph} kilometer per hour है।"
-        )
+        if lang == "hi":
+            # Translate weather condition to Hindi (simple mapping for demo)
+            condition_hindi = {
+                "Clear": "स्पष्ट",
+                "Partly cloudy": "आंशिक रूप से बादल",
+                "Cloudy": "बादल",
+                "Rain": "बारिश",
+                "Thunderstorm": "आंधी",
+                "Snow": "बर्फ",
+                "Sunny": "धूप"
+            }.get(condition, condition)  # Default to English if not found
+            
+            # Format the response in Hindi
+            weather_report = (
+                f"{location}, {country} का वर्तमान मौसम {condition_hindi} है। "
+                f"तापमान {temp_c}°C है, जो {feels_like_c}°C जैसा महसूस होता है। "
+                f"Humidity {humidity}% है और हवा की गति {wind_kph} kilometer per hour है।"
+            )
+        else:
+            # Format the response in English
+            weather_report = (
+                f"The current weather in {location}, {country} is {condition}. "
+                f"The temperature is {temp_c}°C, which feels like {feels_like_c}°C. "
+                f"Humidity is {humidity}% and the wind speed is {wind_kph} km/h."
+            )
         return weather_report
     
     except requests.exceptions.RequestException as e:
-        return "क्षमा करें, मौसम की जानकारी प्राप्त करने में त्रुटि हुई।"
+        if lang == "en":
+            return "Sorry, there was an error fetching the weather information."
+        else:
+            return "क्षमा करें, मौसम की जानकारी प्राप्त करने में त्रुटि हुई।"
     except KeyError:
-        return "क्षमा करें, स्थान का मौसम विवरण प्राप्त करने में असमर्थ। कृपया स्थान की जाँच करें।"
+        if lang == "en":
+            return "Sorry, unable to retrieve weather details for the location. Please check the location."
+        else:
+            return "क्षमा करें, स्थान का मौसम विवरण प्राप्त करने में असमर्थ। कृपया स्थान की जाँच करें।"
 
 # Function to query Google Custom Search API for general knowledge questions
-def handle_general_knowledge_query(query):
+def handle_general_knowledge_query(query, lang="hi"):
     url = 'https://www.googleapis.com/customsearch/v1'
     params = {
         'key': GOOGLE_API_KEY,
         'cx': GOOGLE_CX,
         'q': query,
-        'hl': 'hi',  # Hindi results
+        'hl': lang,  # Use language based on detected language
     }
     try:
         response = requests.get(url, params=params)
@@ -189,14 +213,23 @@ def handle_general_knowledge_query(query):
         if 'items' in search_results:
             snippet = search_results['items'][0].get('snippet', 'No answer found.')
             cleaned_snippet = clean_snippet(snippet)
-            return refine_answer(cleaned_snippet)
-        return "कोई परिणाम नहीं मिला।"
+            return refine_answer(cleaned_snippet, lang)
+        if lang == "en":
+            return "No results found."
+        else:
+            return "कोई परिणाम नहीं मिला।"
     except Exception as e:
-        return "Google खोज सेवा में समस्या है।"
+        if lang == "en":
+            return "There was a problem with the Google search service."
+        else:
+            return "Google खोज सेवा में समस्या है।"
 
-def refine_answer(snippet):
+def refine_answer(snippet, lang="hi"):
     if len(snippet.split()) < 5:
-        snippet += " कृपया अधिक जानकारी के लिए संबंधित स्रोतों से जांच करें।"
+        if lang == "en":
+            snippet += " Please check the related sources for more information."
+        else:
+            snippet += " कृपया अधिक जानकारी के लिए संबंधित स्रोतों से जांच करें।"
     return snippet
 
 # Unified query handler
@@ -212,6 +245,9 @@ def handle_external_query(query, lat, lng, history=[]):
     Returns:
     - A response string or error message.
     """
+    # Detect language based on the query
+    lang = detect_language(query)
+    
     # Classify query and extract location using GPT-4
     classification_response = classify_query_with_gpt(query)
     print("GPT-4 Response:", classification_response)
@@ -223,14 +259,14 @@ def handle_external_query(query, lat, lng, history=[]):
         classification = classification_response.get('classification', None)
         gpt_location = classification_response.get('location', None)
         # Determine the final location to use
-        if gpt_location !='None':
+        if gpt_location != 'None':
             # Use GPT-4's extracted location
             location_name = gpt_location
             location_coords = get_coordinates_from_name(gpt_location)  # Custom function to fetch coordinates
-        elif lat!='None' and lng!='None':
+        elif lat != 'None' and lng != 'None':
             # Use client device location if available
             location_name = get_city_from_coordinates(lat, lng)  # Default label for client device's location
-            location_coords = (lat,lng)
+            location_coords = (lat, lng)
         else:
             # Default fallback if no location is provided
             location_name = "Pune"
@@ -238,32 +274,36 @@ def handle_external_query(query, lat, lng, history=[]):
 
         # Handle 'time' classification
         if classification == 'time':  # Ensure strict equality
-            timezone = None
-
-    # Fetch timezone using location coordinates if available
-            if location_coords != "None":
+            # Fetch timezone using location coordinates if available
+            if location_coords is not None:
                 timezone = get_timezone_from_lat_lng(*location_coords)
-            if not timezone:
-                print("Timezone not found; using default.")  # Debugging
+            else:
+                print("Location coordinates not found; using default timezone.")
                 timezone = "Asia/Kolkata"  # Default timezone fallback
 
-            return get_time(location_name, timezone)
+            return get_time(location_name, timezone, lang)
 
         # Handle 'weather' classification
         elif "weather" in classification:
-            return get_weather(location_name)
+            return get_weather(location_name, lang=lang)
 
         # Handle 'general knowledge' classification
         elif "general knowledge" in classification:
-            return handle_general_knowledge_query(query)
+            return handle_general_knowledge_query(query, lang)
 
         # If classification doesn't match any expected type
         else:
-            return "प्रश्न समझ में नहीं आया। कृपया और स्पष्ट रूप से पूछें।"
+            if lang == "en":
+                return "Query not understood. Please ask more clearly."
+            else:
+                return "प्रश्न समझ में नहीं आया। कृपया और स्पष्ट रूप से पूछें।"
 
     except Exception as e:
         print(f"Error during external query handling: {e}")
-        return "प्रश्न का उत्तर देने में समस्या हुई।"
+        if lang == "en":
+            return "There was a problem providing the answer."
+        else:
+            return "प्रश्न का उत्तर देने में समस्या हुई।"
 
 def clean_snippet(snippet):
     snippet = re.sub(r'\d{1,2} \w+ \d{4}', '', snippet)
@@ -271,9 +311,12 @@ def clean_snippet(snippet):
     snippet = re.sub(r'\|.*$', '', snippet)
     return snippet.strip()
 
-def refine_answer(snippet):
+def refine_answer(snippet, lang="hi"):
     if len(snippet.split()) < 5:
-        snippet += " कृपया अधिक जानकारी के लिए संबंधित स्रोतों से जांच करें।"
+        if lang == "en":
+            snippet += " Please check the related sources for more information."
+        else:
+            snippet += " कृपया अधिक जानकारी के लिए संबंधित स्रोतों से जांच करें।"
     return snippet
 
 # Function to get timezone from latitude and longitude
@@ -297,26 +340,31 @@ def get_coordinates_from_name(location_name):
     Fetch coordinates (latitude, longitude) from a location name using Google Maps Geocoding API.
     """
     try:
-        url = f'https://maps.googleapis.com/maps/api/geocode/json'
+        url = 'https://maps.googleapis.com/maps/api/geocode/json'
         params = {
             'address': location_name,
             'key': GOOGLE_API_KEY
         }
+        print(f"Requesting geocoding for: {location_name}")
+        print(f"URL: {url}")
+        print(f"Params: {params}")
         
         response = requests.get(url, params=params)
         data = response.json()
+        print("Geocoding API response:", data)  # Debug print to inspect full response
         
-        if data['status'] == 'OK' and 'results' in data:
+        if data.get('status') == 'OK' and data.get('results'):
             latitude = data['results'][0]['geometry']['location']['lat']
             longitude = data['results'][0]['geometry']['location']['lng']
             return latitude, longitude
         else:
-            print("Error: Location not found.")
+            print("Error: Location not found. Status:", data.get('status'))
+            if 'error_message' in data:
+                print("Error message:", data['error_message'])
             return None
     except Exception as e:
         print(f"Error during geocoding: {e}")
         return None
-
 
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
