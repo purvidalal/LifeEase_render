@@ -37,6 +37,7 @@ def handle_medical_query(user_message, history=[]):
                 "content": (
                     "You are a medical assistant specialized in helping elderly users. "
                     "You must keep your response to two-three short sentences for any medical question. "
+                    "Remember, regarding medications, always ask if they have taken any medicine previously for a similar situation, if they say yes, auggest them to take that. if they say no, then only suggest sometjing from your side."
                     "Briefly acknowledge the user's concern, then always ask clarifying questions to better understand, but no more than 3 questions and then give suggestions. "
                     "Do not provide more than four sentences under any circumstance. "
                     "If additional professional consultation is needed, mention it clearly, but still remain within two sentences. "
