@@ -9,43 +9,30 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. Grab the avatar element (assumes your avatar is <div class="avatar"> in HTML)
     const avatar = document.querySelector(".avatar");
 
-    // 2. Create functions to start/stop the talking video
+    // NEW: Variable to hold the speaking interval timer
+    let speakingInterval;
+
+    // 2. Create functions to start/stop the "speaking" effect by alternating images
     function startSpeaking() {
-        // Hide the static background image so the video is visible
-        avatar.style.backgroundImage = "none";
-        // If the talking video doesn't exist yet, create and append it
-        if (!document.getElementById("talkingVideo")) {
-            const video = document.createElement("video");
-            video.id = "talkingVideo";
-            video.src = "static/talking-avatar.mp4";  // Path to your talking video
-            video.loop = true;
-            video.muted = true;       // Mute the video's audio if desired
-            video.autoplay = true;
-            // Position and size the video to cover the avatar container
-            video.style.position = "absolute";
-            video.style.top = "0";
-            video.style.left = "0";
-            video.style.width = "100%";
-            video.style.height = "100%";
-            video.style.objectFit = "cover";
-            video.style.zIndex = "1"; // Updated z-index to ensure the video is visible
-            avatar.appendChild(video);
-        } else {
-            // If the video already exists, just show and play it
-            const video = document.getElementById("talkingVideo");
-            video.style.display = "block";
-            video.play();
-        }
+        // Clear any previous interval if exists
+        clearInterval(speakingInterval);
+        let toggle = false;
+        // Begin toggling between the open-mouth and closed-mouth images every 300ms
+        speakingInterval = setInterval(() => {
+            toggle = !toggle;
+            if (toggle) {
+                avatar.style.backgroundImage = 'url("/static/image-open.jpg")';
+            } else {
+                avatar.style.backgroundImage = 'url("/static/image.jpg")';
+            }
+        }, 300);
     }
 
     function stopSpeaking() {
-        // Pause/hide the video so the default avatar image is visible again
-        const video = document.getElementById("talkingVideo");
-        if (video) {
-            video.pause();
-            video.style.display = "none";
-        }
-        // Restore the avatar's static background image
+        // Clear the interval so the image stops toggling
+        clearInterval(speakingInterval);
+        speakingInterval = null;
+        // Restore the static avatar image
         avatar.style.backgroundImage = 'url("/static/image.jpg")';
     }
 
@@ -173,19 +160,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     try {
                         const audio = new Audio("data:audio/wav;base64," + data.audio);
 
-                        // Start showing the talking video
+                        // Start the speaking effect (alternating images)
                         startSpeaking();
 
                         audio.play().catch((error) => {
                             console.error("Error playing audio:", error);
                             alert("Could not play audio. Please check your system's audio settings.");
-                            stopSpeaking(); // Hide the video if playback fails
+                            stopSpeaking(); // Stop the speaking effect if playback fails
                         });
 
-                        // Once audio finishes, hide the talking video
+                        // Once audio finishes, stop the speaking effect and then wait an extra 5 seconds before hiding the popup
                         audio.addEventListener('ended', () => {
                             stopSpeaking();
-                            // Wait an extra 5 seconds before hiding the popup
                             setTimeout(() => {
                                 hideBotPopup();
                             }, 5000);
