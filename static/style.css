@@ -60,12 +60,12 @@ body {
 /* Control button styling */
 .controls {
   position: absolute;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 20px;      /* Match the text-box bottom offset */
+  right: 10px;       /* Move it near the right edge */
   display: flex;
   justify-content: center;
   gap: 20px;
+  /* Remove left: 50% and transform: translateX(-50%) */
 }
 
 .control-button {
@@ -99,31 +99,32 @@ body {
 .text-box {
   position: absolute;
   bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  height: 30px;
+  left: 10px;              /* Adds a small gap from the left */
+  width: 75%;              /* Keeps the width at 75% of the screen */
+  height: 45px;
   background: #2b2b2b;
   color: white;
-  font-size: 14px;
+  font-size: 20px;
   display: flex;
   align-items: center;
   padding: 5px 10px;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
-  z-index: 100;  /* ADD THIS to ensure the text box is on top */
+  border-radius: 5px;      /* Rounds the edges */
+  z-index: 100;            /* Ensures the text box is on top */
 }
 
 /* Expanded text box */
 .text-box.expanded {
-  height: 90%;
+  height: 87%;
   width: 95%;
-  top: 5%;
+  top: 8%;
   left: 50%;
   transform: translateX(-50%);
   padding: 20px;
   border-radius: 10px;
-  z-index: 100;  /* ADD THIS if needed */
+  background: rgba(43, 43, 43, 0.85); /* Added transparency */
+  z-index: 100; 
 }
 
 /* Close button styling */
@@ -133,7 +134,7 @@ body {
   right: 10px;
   background: transparent;
   color: white;
-  font-size: 24px;
+  font-size: 40px;
   border: none;
   cursor: pointer;
   outline: none;
@@ -258,7 +259,7 @@ body {
   gap: 10px;
   padding: 0;
   margin: 0;
-  background: #2b2b2b;
+  background: transparent; /* Added transparency */
   height: calc(100% - 70px);
   overflow-y: auto;
   box-sizing: border-box;
@@ -357,7 +358,8 @@ body {
   margin-right: auto;
 }
 
-/* Chat input styling */
+/* Chat input container styling */
+/* Chat input container styling */
 .chat-input {
   display: flex;
   gap: 10px;
@@ -367,29 +369,35 @@ body {
   bottom: 10px;
   left: 0;
   padding: 10px;
-  background: #2b2b2b;
   box-sizing: border-box;
 }
 
 /* Chat input field styling */
 .chat-input input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 5px;
+  margin-left: 10px;  /* Adds a little extra gap from the left */
+  width: 80%;
   border: none;
-  font-size: 14px;
-  width: 100%;
+  font-size: 20px;
+  height: 45px;
+  padding: 5px 10px;
+  border-radius: 5px;
   box-sizing: border-box;
 }
 
 /* Chat input button styling */
 .chat-input button {
-  padding: 10px 15px;
+  width: 60px;
+  height: 60px;
   background: #007bff;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 50%;
   cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s;
 }
 
 .chat-input button:hover {
