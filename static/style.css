@@ -391,3 +391,18 @@ body {
 .chat-input button:hover {
   background: #0056b3;
 }
+
+/* Bot Response Popup inside the text box */
+.bot-popup {
+  background: #444;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  margin: 0 auto;
+}
+.bot-popup:hover {
+  transform: scale(1.05);
+}

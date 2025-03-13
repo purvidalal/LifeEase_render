@@ -6,6 +6,45 @@ document.addEventListener("DOMContentLoaded", () => {
     const dashboardInterface = document.getElementById("dashboardInterface");
     const settingsInterface = document.getElementById("settingsInterface");
 
+    // 1. Grab the avatar element (assumes your avatar is <div class="avatar"> in HTML)
+    const avatar = document.querySelector(".avatar");
+
+    // 2. Create functions to start/stop the talking video
+    function startSpeaking() {
+        // If the talking video doesn't exist yet, create and append it
+        if (!document.getElementById("talkingVideo")) {
+            const video = document.createElement("video");
+            video.id = "talkingVideo";
+            video.src = "static/talking-avatar.mp4";  // Path to your talking video
+            video.loop = true;
+            video.muted = true;       // Mute the video's audio if desired
+            video.autoplay = true;
+            // Position and size the video to cover the avatar container
+            video.style.position = "absolute";
+            video.style.top = "0";
+            video.style.left = "0";
+            video.style.width = "100%";
+            video.style.height = "100%";
+            video.style.objectFit = "cover";
+            video.style.zIndex = "-1"; // Ensures it sits behind other content in .avatar
+            avatar.appendChild(video);
+        } else {
+            // If the video already exists, just show and play it
+            const video = document.getElementById("talkingVideo");
+            video.style.display = "block";
+            video.play();
+        }
+    }
+
+    function stopSpeaking() {
+        // Pause/hide the video so the default avatar image is visible
+        const video = document.getElementById("talkingVideo");
+        if (video) {
+            video.pause();
+            video.style.display = "none";
+        }
+    }
+
     // Speech recognition setup
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.continuous = false; // Single recognition session
@@ -70,33 +109,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Toggle text box expansion
+    // Toggle text box expansion (updated to work with bot popup)
     textBox.addEventListener("click", (event) => {
-        if (!textBox.classList.contains("expanded")) {
-            textBox.classList.add("expanded");
-            textBox.innerHTML = `
-              <button id="closeButton" class="close-button">&times;</button>
-              <div class="chat-window"></div>
-              <div class="chat-input">
-                <input type="text" id="chatInput" placeholder="Type your message here..." />
-                <button id="sendMessageButton">Send</button>
-              </div>
-            `;
-
-            document.getElementById("closeButton").addEventListener("click", (e) => {
-                e.stopPropagation(); // Prevent click from re-expanding
-                collapseTextBox();
-            });
-
-            document.getElementById("sendMessageButton").addEventListener("click", () => {
-                const chatInput = document.getElementById("chatInput");
-                const message = chatInput.value.trim();
-                if (message) {
-                    addChatMessage("user", message); // Add user message to chat
-                    chatInput.value = ""; // Clear input field
-                    sendToBackend(message); // Send user input to backend
-                }
-            });
+        // Expand if not already expanded and if there's no bot popup waiting
+        if (!textBox.classList.contains("expanded") && !textBox.querySelector(".bot-popup")) {
+            expandTextBoxWithMessage();
         }
         event.stopPropagation(); // Prevent collapse when clicking inside
     });
@@ -141,26 +158,125 @@ document.addEventListener("DOMContentLoaded", () => {
             .then((response) => response.json())
             .then((data) => {
                 console.log("Response from server:", data.response);
-                addChatMessage("bot", data.response || "I'm sorry, I didn't understand that."); // Add bot response to chat
+                const botMessage = data.response || "I'm sorry, I didn't understand that.";
+                addChatMessage("bot", botMessage);
+
+                // Dynamically create and show the bot response popup in the small text box
+                showBotPopup(botMessage);
 
                 if (data.audio) {
                     console.log("Playing audio response...");
                     try {
                         const audio = new Audio("data:audio/wav;base64," + data.audio);
+
+                        // Start showing the talking video
+                        startSpeaking();
+
                         audio.play().catch((error) => {
                             console.error("Error playing audio:", error);
                             alert("Could not play audio. Please check your system's audio settings.");
+                            stopSpeaking(); // Hide the video if playback fails
+                        });
+
+                        // Once audio finishes, hide the talking video
+                        audio.addEventListener('ended', () => {
+                            stopSpeaking();
+                            // Wait an extra 5 seconds before hiding the popup
+                            setTimeout(() => {
+                                hideBotPopup();
+                            }, 5000);
                         });
                     } catch (e) {
                         console.error("Audio playback error:", e);
+                        stopSpeaking();
                     }
                 } else {
                     console.error("No audio response received from the server.");
+                    // If no audio, still hide the popup after 5 seconds
+                    setTimeout(() => {
+                        hideBotPopup();
+                    }, 5000);
                 }
             })
             .catch((error) => {
                 console.error("Error sending input to server:", error);
             });
+    }
+
+    // Dynamically create and display the bot response popup in the small text box
+    function showBotPopup(message) {
+        // Only show the popup if the text box is not expanded
+        if (!textBox.classList.contains("expanded")) {
+            // Clear current content (e.g., the "Tap to type a message..." text)
+            textBox.innerHTML = "";
+            
+            // Create the popup element
+            const popup = document.createElement("div");
+            popup.classList.add("bot-popup");
+            popup.textContent = message;
+            
+            // Append the popup to the text box
+            textBox.appendChild(popup);
+            
+            // When the popup is clicked, expand the text box with the bot message prefilled
+            popup.addEventListener("click", (event) => {
+                event.stopPropagation();
+                expandTextBoxWithMessage(message);
+            });
+        }
+    }
+
+    // Hide the bot popup if it exists
+    function hideBotPopup() {
+        const popup = textBox.querySelector(".bot-popup");
+        if (popup) {
+            popup.remove();
+        }
+        // If the text box is not expanded, reset it to the default placeholder.
+        if (!textBox.classList.contains("expanded")) {
+            textBox.innerHTML = `<span>Tap to type a message...</span>`;
+        }
+    }
+
+    // Expand the text box and prefill it with a message (if provided)
+    function expandTextBoxWithMessage(prefillMessage = "") {
+        if (!textBox.classList.contains("expanded")) {
+            textBox.classList.add("expanded");
+            textBox.innerHTML = `
+                <button id="closeButton" class="close-button">&times;</button>
+                <div class="chat-window"></div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Type your message here..." />
+                    <button id="sendMessageButton">Send</button>
+                </div>
+            `;
+            
+            // If there is a prefill message, add it to the chat window
+            if (prefillMessage) {
+                const chatWindow = textBox.querySelector(".chat-window");
+                const messageDiv = document.createElement("div");
+                messageDiv.classList.add("chat-message", "bot-message");
+                messageDiv.textContent = prefillMessage;
+                chatWindow.appendChild(messageDiv);
+            }
+            
+            // Bind the close button event
+            document.getElementById("closeButton").addEventListener("click", (e) => {
+                e.stopPropagation();
+                collapseTextBox();
+            });
+            
+            // Bind the send button event
+            document.getElementById("sendMessageButton").addEventListener("click", () => {
+                const chatInput = document.getElementById("chatInput");
+                const message = chatInput.value.trim();
+                if (message) {
+                    addChatMessage("user", message);
+                    chatInput.value = "";
+                    sendToBackend(message);
+                }
+            });
+        }
     }
 });
 

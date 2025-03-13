@@ -18,7 +18,7 @@ def detect_query(user_message, history=[]):
         messages=[
             {"role": "system", "content": (
                 "You are a helpful conversational bot for the elderly. "
-                "Classify the user's input into one of the following categories: 'internal' (e.g., personal or daily life-related queries),'external' (e.g., queries requiring online information like time, weather, or Google search), or 'medical' (e.g., health-related questions). "
+                "Classify the user's input into one of the following categories: 'internal' (e.g., personal or daily life-related queries or who are you type question like descrbe yourself),'external' (e.g., queries requiring online information like time, weather, or Google search), or 'medical' (e.g., health-related questions). "
                 "Consider the user's conversation history for context. "
                 "Respond with only one word: 'internal', 'external', or 'medical'."
             )},
