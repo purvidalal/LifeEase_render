@@ -11,6 +11,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Create functions to start/stop the talking video
     function startSpeaking() {
+        // Hide the static background image so the video is visible
+        avatar.style.backgroundImage = "none";
         // If the talking video doesn't exist yet, create and append it
         if (!document.getElementById("talkingVideo")) {
             const video = document.createElement("video");
@@ -26,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
             video.style.width = "100%";
             video.style.height = "100%";
             video.style.objectFit = "cover";
-            video.style.zIndex = "-1"; // Ensures it sits behind other content in .avatar
+            video.style.zIndex = "1"; // Updated z-index to ensure the video is visible
             avatar.appendChild(video);
         } else {
             // If the video already exists, just show and play it
@@ -37,12 +39,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function stopSpeaking() {
-        // Pause/hide the video so the default avatar image is visible
+        // Pause/hide the video so the default avatar image is visible again
         const video = document.getElementById("talkingVideo");
         if (video) {
             video.pause();
             video.style.display = "none";
         }
+        // Restore the avatar's static background image
+        avatar.style.backgroundImage = 'url("/static/image.jpg")';
     }
 
     // Speech recognition setup
