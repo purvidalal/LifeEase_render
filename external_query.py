@@ -205,32 +205,56 @@ def handle_general_knowledge_query(query, lang="hi"):
         'key': GOOGLE_API_KEY,
         'cx': GOOGLE_CX,
         'q': query,
-        'hl': lang,  # Use language based on detected language
+        'hl': lang,  # Set the language for the search
     }
     try:
         response = requests.get(url, params=params)
         search_results = response.json()
         if 'items' in search_results:
-            snippet = search_results['items'][0].get('snippet', 'No answer found.')
-            cleaned_snippet = clean_snippet(snippet)
-            return refine_answer(cleaned_snippet, lang)
-        if lang == "en":
-            return "No results found."
+            # Aggregate snippets from the top 3 results for a more robust context
+            snippets = [item.get('snippet', '') for item in search_results['items'][:3]]
+            combined_snippets = " ".join(snippets)
+            
+            # Use GPT-4 to refine the combined answer based on the query context
+            refined_answer = refine_answer_with_gpt(combined_snippets, query, lang)
+            return refined_answer
         else:
-            return "कोई परिणाम नहीं मिला।"
+            return "No results found." if lang == "en" else "कोई परिणाम नहीं मिला।"
     except Exception as e:
-        if lang == "en":
-            return "There was a problem with the Google search service."
-        else:
-            return "Google खोज सेवा में समस्या है।"
+        return "There was a problem with the Google search service." if lang == "en" else "Google खोज सेवा में समस्या है।"
 
-def refine_answer(snippet, lang="hi"):
-    if len(snippet.split()) < 5:
+def refine_answer_with_gpt(snippet_text, query, lang="hi"):
+    """
+    Uses GPT-4 to refine and summarize the provided snippet text into a coherent answer.
+    """
+    try:
+        # Create a prompt that includes both the snippet and the original query for context.
+        # Adjust the instructions based on the language.
         if lang == "en":
-            snippet += " Please check the related sources for more information."
+            prompt = (
+                f"Given the following information from various sources:\n\"{snippet_text}\"\n\n"
+                f"Provide a clear, concise, and well-organized answer to the question: \"{query}\""
+            )
         else:
-            snippet += " कृपया अधिक जानकारी के लिए संबंधित स्रोतों से जांच करें।"
-    return snippet
+            prompt = (
+                f"निम्नलिखित स्रोतों से प्राप्त जानकारी के आधार पर:\n\"{snippet_text}\"\n\n"
+                f"कृपया प्रश्न \"{query}\" का स्पष्ट, संक्षिप्त, और सुव्यवस्थित उत्तर दें।"
+            )
+        # Call GPT-4 (using your existing client) to get a refined answer.
+        completion = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a knowledgeable assistant that provides precise and concise answers."},
+                {"role": "user", "content": prompt}
+            ],
+        )
+        refined_response = completion.choices[0].message.content.strip() if completion.choices else snippet_text
+        return refined_response
+
+    except Exception as e:
+        # If GPT-4 call fails, return the original snippet with a note.
+        fallback_note = " Please verify with reliable sources." if lang == "en" else " कृपया विश्वसनीय स्रोतों से पुष्टि करें।"
+        return snippet_text + fallback_note
 
 # Unified query handler
 def handle_external_query(query, lat, lng, history=[]):

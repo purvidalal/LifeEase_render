@@ -187,10 +187,10 @@ body {
 /* Styling for the preview section */
 .preview-container {
   position: absolute;
-  top: 15%;
+  top: 30%;
   left: 5%;
   width: 60%;
-  height: 75%;
+  height: 35%;
   background-color: white;
   border-radius: 0px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -211,8 +211,8 @@ body {
 
 /* Preview image */
 .preview-image {
-  width: 100px;
-  height: 100px;
+  width: 100%; /* Adjust as needed */
+  height: auto;
   margin-top: 10px;
 }
 
