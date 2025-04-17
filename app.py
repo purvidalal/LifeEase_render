@@ -141,7 +141,7 @@ def upload_image():
 
         llama_client = OpenAI(
             base_url="https://infer.e2enetworks.net/project/p-5263/genai/llama_3_2_11b_vision_instruct/v1",
-            api_key="<REPLACE_WITH_VALID_TOKEN>"
+            api_key="f53d8d5f-6a96-45db-90e1-053dae14a012"
         )
 
         response = llama_client.chat.completions.create(
