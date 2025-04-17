@@ -3,6 +3,7 @@ import logging
 import os
 import json
 import PyPDF2
+import mimetypes
 from flask import Flask, render_template, request, jsonify, Response
 from stt_service import speech_to_text
 from emotion_service import detect_emotion
@@ -130,44 +131,45 @@ def upload_file():
 def upload_image():
     try:
         image_file = request.files.get('image')
-        prompt = request.form.get('prompt', '')
+        prompt = request.form.get('prompt', '') or "What do you see in this image?"
 
         if not image_file or image_file.filename == '':
             return jsonify({"error": "No image file provided."}), 400
 
-        # Convert image to base64
-        image_bytes = image_file.read()
-        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+        # Save image temporarily
+        temp_path = os.path.join("temp", image_file.filename)
+        os.makedirs("temp", exist_ok=True)
+        image_file.save(temp_path)
 
-        llama_client = OpenAI(
-            base_url="https://infer.e2enetworks.net/project/p-5263/genai/llama_3_2_11b_vision_instruct/v1",
-            api_key="f53d8d5f-6a96-45db-90e1-053dae14a012"
-        )
+        # Prepare file for OpenAI GPT-4 Vision
+        mime_type = mimetypes.guess_type(temp_path)[0] or "image/jpeg"
+        with open(temp_path, "rb") as f:
+            base64_image = base64.b64encode(f.read()).decode("utf-8")
 
-        response = llama_client.chat.completions.create(
-            model="llama_3_2_11b_vision_instruct",
+        response = client.chat.completions.create(
+            model="gpt-4-turbo",
             messages=[
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": prompt or "Describe this image."},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{base64_image}"
+                            }
+                        }
                     ]
                 }
             ],
-            temperature=0.5,
-            stream=False
+            max_tokens=300
         )
 
-        if response and response.choices:
-            result = response.choices[0].message.content
-        else:
-            result = "No response from LLaMA Vision."
-
+        result = response.choices[0].message.content
         return jsonify({"response": result})
 
     except Exception as e:
-        logging.error(f"Image processing error: {e}")
+        logging.error(f"OpenAI Vision error: {e}")
         return jsonify({"error": "Failed to process image."}), 500
 
 @app.route('/qa', methods=['POST'])
