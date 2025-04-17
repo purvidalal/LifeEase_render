@@ -10,7 +10,7 @@ def detect_emotion(sentence):
     completion = client.chat.completions.create(
         model="gpt-4",  # You can use "gpt-4-turbo" if you prefer
         messages=[
-            {"role": "system", "content": "You are a Hindi emotion classifier. Classify the emotion as Happy, Calm, Sad, Celebration Preparation, or other relevant emotions."},
+            {"role": "system", "content": "You are a Hindi/English emotion classifier. Classify the emotion as Happy, Calm, Sad, Celebration Preparation, discomfort or other relevant emotions."},
             {"role": "user", "content": f"Sentence: {sentence}"}
         ]
     )

@@ -5,116 +5,99 @@ document.addEventListener("DOMContentLoaded", () => {
     const mainInterface = document.getElementById("mainInterface");
     const dashboardInterface = document.getElementById("dashboardInterface");
     const settingsInterface = document.getElementById("settingsInterface");
-
-    // 1. Grab the avatar element (assumes your avatar is <div class="avatar"> in HTML)
     const avatar = document.querySelector(".avatar");
 
-    // NEW: Variable to hold the speaking interval timer
     let speakingInterval;
+    let uploadedFilename = null;
+    let uploadedImageFile = null;
 
-    // 2. Create functions to start/stop the "speaking" effect by alternating images
     function startSpeaking() {
-        // Clear any previous interval if exists
         clearInterval(speakingInterval);
         let toggle = false;
-        // Begin toggling between the open-mouth and closed-mouth images every 300ms
         speakingInterval = setInterval(() => {
             toggle = !toggle;
-            if (toggle) {
-                avatar.style.backgroundImage = 'url("/static/image-open.jpg")';
-            } else {
-                avatar.style.backgroundImage = 'url("/static/image.jpg")';
-            }
+            avatar.style.backgroundImage = toggle
+                ? 'url("/static/image-open.jpg")'
+                : 'url("/static/image.jpg")';
         }, 300);
     }
 
     function stopSpeaking() {
-        // Clear the interval so the image stops toggling
         clearInterval(speakingInterval);
         speakingInterval = null;
-        // Restore the static avatar image
         avatar.style.backgroundImage = 'url("/static/image.jpg")';
     }
 
-    // Speech recognition setup
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.continuous = false; // Single recognition session
+    recognition.continuous = false;
     recognition.lang = "en-US";
     let isMuted = true;
 
-    recognition.onstart = function () {
-        console.log("Speech recognition started...");
-    };
-
-    recognition.onend = function () {
-        console.log("Speech recognition stopped...");
-    };
-
     recognition.onresult = function (event) {
         const transcript = event.results[0][0].transcript;
-        console.log("Recognized speech:", transcript);
-        addChatMessage("user", transcript); // Add user message to chat
-        sendToBackend(transcript); // Send transcript to backend
+        addChatMessage("user", transcript);
+        sendToBackend(transcript);
     };
 
-    recognition.onerror = function (event) {
-        console.error("Speech recognition error:", event.error);
-    };
-
-    // Show the Dashboard interface
-    document.getElementById("menuButton").addEventListener("click", () => {
-        mainInterface.style.display = "none";
-        dashboardInterface.style.display = "block";
-    });
-
-    // Show the Settings interface
-    document.getElementById("settingsButton").addEventListener("click", () => {
-        mainInterface.style.display = "none";
-        settingsInterface.style.display = "block";
-    });
-
-    // Back arrow functionality for both Dashboard and Settings
-    document.querySelectorAll(".back-arrow").forEach((backArrow) => {
-        backArrow.addEventListener("click", () => {
-            dashboardInterface.style.display = "none";
-            settingsInterface.style.display = "none";
-            mainInterface.style.display = "block";
-        });
-    });
-
-    // Toggle mute/unmute functionality for mic with images
     micButton.addEventListener("click", () => {
         isMuted = !isMuted;
         if (!isMuted) {
             micButton.classList.add("muted");
-            micIcon.src = "static/unmutemic.jpg"; // Replace with the path to your unmute image
-            micIcon.alt = "Unmute";
-            console.log("Mic unmuted, starting recording...");
+            micIcon.src = "static/unmutemic.jpg";
             recognition.start();
         } else {
             micButton.classList.remove("muted");
-            micIcon.src = "static/mutemic.jpg"; // Replace with the path to your mute image
-            micIcon.alt = "Mute";
-            console.log("Mic muted, stopping recording...");
+            micIcon.src = "static/mutemic.jpg";
             recognition.stop();
         }
     });
 
-    // Toggle text box expansion (updated to work with bot popup)
+    // ✅ Upload button file handler with image + doc support
+    document.getElementById("fileUpload").addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const fileType = file.type;
+
+        if (fileType.startsWith("image/")) {
+            uploadedImageFile = file;
+            alert("Image uploaded! Now type your question in the chat.");
+        } else {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const response = await fetch("/upload", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const data = await response.json();
+                if (data.filename) {
+                    uploadedFilename = data.filename;
+                    alert("File uploaded successfully! Now type your question in the chat.");
+                } else {
+                    alert("File upload failed.");
+                }
+            } catch (err) {
+                console.error("Upload error:", err);
+                alert("Upload failed.");
+            }
+        }
+    });
+
+    // Text box click to expand
     textBox.addEventListener("click", (event) => {
-        // Expand if not already expanded and if there's no bot popup waiting
         if (!textBox.classList.contains("expanded") && !textBox.querySelector(".bot-popup")) {
             expandTextBoxWithMessage();
         }
-        event.stopPropagation(); // Prevent collapse when clicking inside
+        event.stopPropagation();
     });
 
-    // Collapse the expanded text box when clicking outside
     document.body.addEventListener("click", () => {
         collapseTextBox();
     });
 
-    // Collapse text box function
     function collapseTextBox() {
         if (textBox.classList.contains("expanded")) {
             textBox.classList.remove("expanded");
@@ -122,113 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Add a chat message to the chat window
-    function addChatMessage(sender, message) {
-        const chatWindow = textBox.querySelector(".chat-window");
-        if (chatWindow) {
-            const messageDiv = document.createElement("div");
-            messageDiv.classList.add("chat-message", sender === "user" ? "user-message" : "bot-message");
-            messageDiv.textContent = message;
-            chatWindow.appendChild(messageDiv);
-
-            // Auto-scroll to the bottom
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-    }
-
-    // Send the user input to the backend for processing
-    function sendToBackend(input) {
-        console.log("Sending input to the server...");
-        fetch("/process-audio", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ transcript: input }), // Send input as a transcript
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                console.log("Response from server:", data.response);
-                const botMessage = data.response || "I'm sorry, I didn't understand that.";
-                addChatMessage("bot", botMessage);
-
-                // Dynamically create and show the bot response popup in the small text box
-                showBotPopup(botMessage);
-
-                if (data.audio) {
-                    console.log("Playing audio response...");
-                    try {
-                        const audio = new Audio("data:audio/wav;base64," + data.audio);
-
-                        // Start the speaking effect (alternating images)
-                        startSpeaking();
-
-                        audio.play().catch((error) => {
-                            console.error("Error playing audio:", error);
-                            alert("Could not play audio. Please check your system's audio settings.");
-                            stopSpeaking(); // Stop the speaking effect if playback fails
-                        });
-
-                        // Once audio finishes, stop the speaking effect and then wait an extra 5 seconds before hiding the popup
-                        audio.addEventListener('ended', () => {
-                            stopSpeaking();
-                            setTimeout(() => {
-                                hideBotPopup();
-                            }, 5000);
-                        });
-                    } catch (e) {
-                        console.error("Audio playback error:", e);
-                        stopSpeaking();
-                    }
-                } else {
-                    console.error("No audio response received from the server.");
-                    // If no audio, still hide the popup after 5 seconds
-                    setTimeout(() => {
-                        hideBotPopup();
-                    }, 5000);
-                }
-            })
-            .catch((error) => {
-                console.error("Error sending input to server:", error);
-            });
-    }
-
-    // Dynamically create and display the bot response popup in the small text box
-    function showBotPopup(message) {
-        // Only show the popup if the text box is not expanded
-        if (!textBox.classList.contains("expanded")) {
-            // Clear current content (e.g., the "Tap to type a message..." text)
-            textBox.innerHTML = "";
-            
-            // Create the popup element
-            const popup = document.createElement("div");
-            popup.classList.add("bot-popup");
-            popup.textContent = message;
-            
-            // Append the popup to the text box
-            textBox.appendChild(popup);
-            
-            // When the popup is clicked, expand the text box with the bot message prefilled
-            popup.addEventListener("click", (event) => {
-                event.stopPropagation();
-                expandTextBoxWithMessage(message);
-            });
-        }
-    }
-
-    // Hide the bot popup if it exists
-    function hideBotPopup() {
-        const popup = textBox.querySelector(".bot-popup");
-        if (popup) {
-            popup.remove();
-        }
-        // If the text box is not expanded, reset it to the default placeholder.
-        if (!textBox.classList.contains("expanded")) {
-            textBox.innerHTML = `<span>Tap to type a message...</span>`;
-        }
-    }
-
-    // Expand the text box and prefill it with a message (if provided)
     function expandTextBoxWithMessage(prefillMessage = "") {
         if (!textBox.classList.contains("expanded")) {
             textBox.classList.add("expanded");
@@ -240,8 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button id="sendMessageButton">Send</button>
                 </div>
             `;
-            
-            // If there is a prefill message, add it to the chat window
+
             if (prefillMessage) {
                 const chatWindow = textBox.querySelector(".chat-window");
                 const messageDiv = document.createElement("div");
@@ -249,14 +124,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 messageDiv.textContent = prefillMessage;
                 chatWindow.appendChild(messageDiv);
             }
-            
-            // Bind the close button event
+
             document.getElementById("closeButton").addEventListener("click", (e) => {
                 e.stopPropagation();
                 collapseTextBox();
             });
-            
-            // Bind the send button event
+
             document.getElementById("sendMessageButton").addEventListener("click", () => {
                 const chatInput = document.getElementById("chatInput");
                 const message = chatInput.value.trim();
@@ -268,73 +141,168 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
     }
-});
 
-// Function to request location and send it to Flask
-function requestLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            function (position) {
-                const latitude = position.coords.latitude;
-                const longitude = position.coords.longitude;
-
-                console.log("User Location: ", latitude, longitude);
-
-                // Send location to Flask backend
-                fetch('/process-location', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        latitude: latitude,
-                        longitude: longitude
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Location sent successfully:", data);
-                })
-                .catch(error => {
-                    console.error("Error sending location:", error);
-                });
-            },
-            function (error) {
-                console.error("Error getting location:", error);
-                alert("Location access denied or unavailable. Please enable location in browser settings.");
-            }
-        );
-    } else {
-        alert("Geolocation is not supported by your browser.");
+    function addChatMessage(sender, message) {
+        const chatWindow = textBox.querySelector(".chat-window");
+        if (chatWindow) {
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("chat-message", sender === "user" ? "user-message" : "bot-message");
+            messageDiv.textContent = message;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
     }
-}
 
-// ✅ Deep Linking for Apps
-document.getElementById("whatsappIcon").addEventListener("click", () => {
-    window.location.href = "whatsapp://send?phone="; // Add number if needed
-});
+    function showBotPopup(message) {
+        if (!textBox.classList.contains("expanded")) {
+            textBox.innerHTML = "";
+            const popup = document.createElement("div");
+            popup.classList.add("bot-popup");
+            popup.textContent = message;
+            textBox.appendChild(popup);
+            popup.addEventListener("click", (event) => {
+                event.stopPropagation();
+                expandTextBoxWithMessage(message);
+            });
+        }
+    }
 
-document.getElementById("youtubeIcon").addEventListener("click", () => {
-    window.location.href = "https://www.youtube.com/";
-});
+    function hideBotPopup() {
+        const popup = textBox.querySelector(".bot-popup");
+        if (popup) popup.remove();
+        if (!textBox.classList.contains("expanded")) {
+            textBox.innerHTML = `<span>Tap to type a message...</span>`;
+        }
+    }
 
-document.getElementById("musicIcon").addEventListener("click", () => {
-    window.location.href = "spotify://"; // Spotify deep link
-});
+    function sendToBackend(input) {
+        console.log("Sending input to the server...");
 
-document.getElementById("photosIcon").addEventListener("click", () => {
-    window.location.href = "googlephotos://"; // Google Photos deep link
-});
+        if (uploadedImageFile) {
+            const formData = new FormData();
+            formData.append("image", uploadedImageFile);
+            formData.append("prompt", input);
 
-document.getElementById("newsIcon").addEventListener("click", () => {
-    window.location.href = "https://news.google.com/";
-});
+            fetch("/upload-image", {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    const botMessage = data.response || "I'm sorry, I couldn't understand the image.";
+                    addChatMessage("bot", botMessage);
+                    showBotPopup(botMessage);
+                    setTimeout(hideBotPopup, 5000);
+                    uploadedImageFile = null;
+                })
+                .catch((error) => {
+                    console.error("Vision error:", error);
+                    addChatMessage("bot", "Error analyzing the image.");
+                });
+            return;
+        }
 
-document.getElementById("gamesIcon").addEventListener("click", () => {
-    window.location.href = "https://play.google.com/store";
-});
+        const endpoint = uploadedFilename ? "/qa" : "/process-audio";
+        const payload = uploadedFilename
+            ? JSON.stringify({ question: input, filename: uploadedFilename })
+            : JSON.stringify({ transcript: input });
 
-// Call this function when the page loads
-window.onload = () => {
+        fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: payload,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                const botMessage = data.response || "I'm sorry, I didn't understand that.";
+                addChatMessage("bot", botMessage);
+                showBotPopup(botMessage);
+
+                if (data.audio) {
+                    const audio = new Audio("data:audio/wav;base64," + data.audio);
+                    startSpeaking();
+                    audio.play().catch((e) => console.error("Audio error:", e));
+                    audio.addEventListener("ended", () => {
+                        stopSpeaking();
+                        setTimeout(hideBotPopup, 5000);
+                    });
+                } else {
+                    setTimeout(hideBotPopup, 5000);
+                }
+
+                uploadedFilename = null;
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
+    }
+
+    // Interface buttons
+    document.getElementById("menuButton").addEventListener("click", () => {
+        mainInterface.style.display = "none";
+        dashboardInterface.style.display = "block";
+    });
+
+    document.getElementById("settingsButton").addEventListener("click", () => {
+        mainInterface.style.display = "none";
+        settingsInterface.style.display = "block";
+    });
+
+    document.querySelectorAll(".back-arrow").forEach((arrow) => {
+        arrow.addEventListener("click", () => {
+            dashboardInterface.style.display = "none";
+            settingsInterface.style.display = "none";
+            mainInterface.style.display = "block";
+        });
+    });
+
+    // Location send
+    function requestLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    fetch('/process-location', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                        })
+                    })
+                        .then((res) => res.json())
+                        .then((data) => console.log("Location sent:", data))
+                        .catch((err) => console.error("Location error:", err));
+                },
+                function (error) {
+                    alert("Location access denied or unavailable.");
+                }
+            );
+        } else {
+            alert("Geolocation is not supported by your browser.");
+        }
+    }
+
     requestLocation();
-};
+
+    // App deep links
+    document.getElementById("whatsappIcon").addEventListener("click", () => {
+        window.location.href = "whatsapp://send?phone=";
+    });
+    document.getElementById("youtubeIcon").addEventListener("click", () => {
+        window.location.href = "https://www.youtube.com/";
+    });
+    document.getElementById("musicIcon").addEventListener("click", () => {
+        window.location.href = "spotify://";
+    });
+    document.getElementById("photosIcon").addEventListener("click", () => {
+        window.location.href = "googlephotos://";
+    });
+    document.getElementById("newsIcon").addEventListener("click", () => {
+        window.location.href = "https://news.google.com/";
+    });
+    document.getElementById("gamesIcon").addEventListener("click", () => {
+        window.location.href = "https://play.google.com/store";
+    });
+});

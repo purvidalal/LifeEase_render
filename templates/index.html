@@ -18,16 +18,26 @@
     <img id="menuButton" class="menu-icon" src="/static/dashboardicon.png" alt="Dashboard Icon" />
 
     <div class="avatar"></div>
-    <div class="controls">
-      <div class="control-button" id="micButton" onclick="toggleMic()">
-        <img id="micIcon" src="static/mutemic.jpg" alt="Mute" />
-      </div>
-    </div>    
+
+    <!-- ✅ Upload Button (LEFT of text box) -->
+    <div class="upload-wrapper">
+      <label for="fileUpload" class="upload-button">
+        <img src="/static/uploadbutton.png" alt="Upload" />
+      </label>
+      <input type="file" id="fileUpload" name="file" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" hidden />
+    </div>
 
     <!-- Text box below the mic button -->
     <div class="text-box">
       <span>Tap to type a message...</span>
     </div>
+
+    <!-- Mic Button (bottom right corner) -->
+    <div class="controls">
+      <div class="control-button" id="micButton" onclick="toggleMic()">
+        <img id="micIcon" src="static/mutemic.jpg" alt="Mute" />
+      </div>
+    </div>    
   </div>
 
   <!-- Dashboard Interface -->
