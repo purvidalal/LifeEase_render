@@ -52,7 +52,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ✅ Upload button file handler with image + doc support
     document.getElementById("fileUpload").addEventListener("change", async (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -61,7 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (fileType.startsWith("image/")) {
             uploadedImageFile = file;
-            alert("Image uploaded! Now type your question in the chat.");
         } else {
             const formData = new FormData();
             formData.append("file", file);
@@ -75,18 +73,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await response.json();
                 if (data.filename) {
                     uploadedFilename = data.filename;
-                    alert("File uploaded successfully! Now type your question in the chat.");
-                } else {
-                    alert("File upload failed.");
                 }
             } catch (err) {
                 console.error("Upload error:", err);
-                alert("Upload failed.");
             }
         }
     });
 
-    // Text box click to expand
     textBox.addEventListener("click", (event) => {
         if (!textBox.classList.contains("expanded") && !textBox.querySelector(".bot-popup")) {
             expandTextBoxWithMessage();
@@ -192,7 +185,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     const botMessage = data.response || "I'm sorry, I couldn't understand the image.";
                     addChatMessage("bot", botMessage);
                     showBotPopup(botMessage);
-                    setTimeout(hideBotPopup, 5000);
+
+                    if (data.audio) {
+                        const audio = new Audio("data:audio/wav;base64," + data.audio);
+                        startSpeaking();
+                        audio.play().catch((e) => console.error("Audio error:", e));
+                        audio.addEventListener("ended", () => {
+                            stopSpeaking();
+                            setTimeout(hideBotPopup, 5000);
+                        });
+                    } else {
+                        setTimeout(hideBotPopup, 5000);
+                    }
+
                     uploadedImageFile = null;
                 })
                 .catch((error) => {
@@ -239,7 +244,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
-    // Interface buttons
     document.getElementById("menuButton").addEventListener("click", () => {
         mainInterface.style.display = "none";
         dashboardInterface.style.display = "block";
@@ -258,7 +262,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Location send
     function requestLocation() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -286,7 +289,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     requestLocation();
 
-    // App deep links
     document.getElementById("whatsappIcon").addEventListener("click", () => {
         window.location.href = "whatsapp://send?phone=";
     });

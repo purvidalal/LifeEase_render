@@ -3,84 +3,88 @@ import logging
 import re
 from openai import OpenAI
 
-# Set up logging for debugging
+# ----------------------------------------------------------------------
+# Setup logging
+# ----------------------------------------------------------------------
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Set up the OpenAI API key
-os.environ["OPENAI_API_KEY"] = "sk-FnkWOsdYrUaPc5t3PVs1zcp0w7ag5lOtn2EsrzULMpT3BlbkFJQaLK6EfGogyhHrSl3qEmgU8mDHHBcubT4s_RaHz0IA"
+# ----------------------------------------------------------------------
+# TIR API Setup
+# ----------------------------------------------------------------------
+# You can edit your token, URL, and model here
+TIR_API_KEY = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJGSjg2R2NGM2pUYk5MT2NvNE52WmtVQ0lVbWZZQ3FvcXRPUWVNZmJoTmxFIn0.eyJleHAiOjE3NzY0MTQ0MDYsImlhdCI6MTc0NDg3ODQwNiwianRpIjoiMjA3NjAyMTctNmY3NC00NWJmLTliMDMtN2UzMTNmZTRhMDU4IiwiaXNzIjoiaHR0cDovL2dhdGV3YXkuZTJlbmV0d29ya3MuY29tL2F1dGgvcmVhbG1zL2FwaW1hbiIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJmZTk1YTdlMy1mYTIzLTRmYjgtYjkzMy00NWUwNGVkMGRjYjAiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJhcGltYW51aSIsInNlc3Npb25fc3RhdGUiOiI4OTIzZmYyNS1kMmRhLTQ3N2ItODI2YS0xNjVhZGJmZDMzMDYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImFwaXVzZXIiLCJkZWZhdWx0LXJvbGVzLWFwaW1hbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsInNpZCI6Ijg5MjNmZjI1LWQyZGEtNDc3Yi04MjZhLTE2NWFkYmZkMzMwNiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwibmFtZSI6IlB1cnZpIERhbGFsIiwicHJpbWFyeV9lbWFpbCI6InN3YW1pQGJvYWllbnQuY29tIiwiaXNfcHJpbWFyeV9jb250YWN0IjpmYWxzZSwicHJlZmVycmVkX3VzZXJuYW1lIjoicHVydmkuZGFsYWxAYm9haWVudC5jb20iLCJnaXZlbl9uYW1lIjoiUHVydmkiLCJmYW1pbHlfbmFtZSI6IkRhbGFsIiwiZW1haWwiOiJwdXJ2aS5kYWxhbEBib2FpZW50LmNvbSIsImlzX2luZGlhYWlfdXNlciI6ZmFsc2V9.kVFGHjoq3LLo-mvEar25jejsrWZHa9RDt9FA9LvuIiIT6DpRjPrfdQh2CyuvXa3fGaelnDU3xYUiDpEjLZQb7CpWdXSNs2UF6pp26l-CApHiG8ty-ksYpYOtal_jp5tWrQNZg-aGNdqjRAhLmqOk5wjlEuyGMX0P4D9UfCZedVI"
+TIR_BASE_URL = "https://infer.e2enetworks.net/project/p-5263/endpoint/is-4799/v1/"
+TIR_MODEL_NAME = "peft-model"
 
-# Instantiate the OpenAI client
-client = OpenAI()
+# Connect to TIR
+client = OpenAI(
+    base_url=TIR_BASE_URL,
+    api_key=TIR_API_KEY
+)
 
-MAX_CHARS = 500  # API input character limit
+MAX_CHARS = 500
 
+# ----------------------------------------------------------------------
+# Medical Query Handler
+# ----------------------------------------------------------------------
 def handle_medical_query(user_message, history=[]):
     """
-    Process medical-related queries using GPT-4, while considering previous interactions.
-    Force the final output to only two sentences to keep responses short and step-by-step.
+    Handle elderly-friendly medical queries using fine-tuned LLaMA model hosted on TIR.
+    Provides very short, empathetic responses (2-3 sentences).
     """
     try:
-        # Truncate the input if it exceeds the character limit
         if len(user_message) > MAX_CHARS:
-            logging.warning("Input exceeds maximum character limit. Truncating input.")
+            logging.warning("Input exceeds max length. Truncating.")
             user_message = user_message[:MAX_CHARS]
 
-        # Extract last few interactions for context
+        # Prepare conversation history if exists
         conversation_context = "\n".join(
             [f"User: {entry['user']}\nBot: {entry['bot']}" for entry in history[-3:]]
         ) if history else ""
 
-        # Construct messages for GPT-4
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a medical assistant specialized in helping elderly users. "
-                    "You must keep your response to two-three short sentences for any medical question. "
-                    "Briefly acknowledge the user's concern, then always ask clarifying questions to better understand, but no more than 3 questions and then give suggestions. "
-                    "Do not provide more than four sentences under any circumstance. "
-                    "If additional professional consultation is needed, mention it clearly, but still remain within two sentences. "
-                    "Remember, regarding medications, first of all do not say something from your side first, but if the user asks, always ask if they have taken any medicine previously for a similar situation. If they say yes, suggest them to take that. If they say no, then only suggest something from your side."
-                    "If symptoms were previously mentioned, recall them before answering. "
-                    "Always be empathetic and concise."
-                )
-            }
-        ]
-
-        # Include previous conversation history
-        if conversation_context:
-            messages.append({
-                "role": "system",
-                "content": f"Previous medical discussion:\n{conversation_context}"
-            })
-
-        # Add current medical query
-        messages.append({"role": "user", "content": f"Medical Question: {user_message}"})
-
-        # Call GPT-4 for response generation
-        completion = client.chat.completions.create(
-            model="gpt-4",
-            messages=messages,
-            max_tokens=60,   # Keep this small to discourage lengthy responses
-            temperature=0.7
+        # System prompt for elderly medical assistance
+        system_prompt = (
+            "You are a medical assistant specialized in helping elderly users. "
+            "Keep your answer very short (2-3 sentences maximum). "
+            "First acknowledge the concern, then gently suggest actions. "
+            "If medication is discussed, first ask if they took anything before. "
+            "Always be simple, supportive, and avoid medical jargon."
         )
 
-        # Extract the raw response
-        raw_response = completion.choices[0].message.content.strip()
+        # Construct messages
+        messages = [{"role": "system", "content": system_prompt}]
 
-        # -- POST-PROCESSING: Forcibly truncate to TWO sentences --
-        # Split on sentence boundaries
+        if conversation_context:
+            messages.append({"role": "system", "content": f"Previous conversation:\n{conversation_context}"})
+
+        messages.append({"role": "user", "content": f"Medical Question: {user_message}"})
+
+        # API call with streaming
+        streamer = client.chat.completions.create(
+            model=TIR_MODEL_NAME,
+            messages=messages,
+            max_tokens=60,
+            temperature=0.7,
+            stream=True
+        )
+
+        # Reconstruct full streamed response
+        full_response = ""
+        for chunk in streamer:
+            if chunk.choices[0].delta.content:
+                full_response += chunk.choices[0].delta.content
+
+        raw_response = full_response.strip()
+
+        # Take only first two sentences
         sentences = re.split(r'(?<=[.?!])\s+', raw_response)
-        # Take only the first two sentences
-        truncated_sentences = sentences[:2]
-        # Rejoin them
-        medical_answer = " ".join(truncated_sentences).strip()
+        medical_answer = " ".join(sentences[:2]).strip()
 
         logging.info("Medical query processed successfully.")
         return medical_answer
 
     except Exception as e:
-        logging.error(f"An error occurred while processing the query: {e}")
+        logging.error(f"Error handling medical query: {e}")
         return (
             "I'm sorry, I couldn't process your request. "
             "Please try again or consult a healthcare professional."
