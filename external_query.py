@@ -1,6 +1,6 @@
 import requests
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytz
 import os
 import certifi
@@ -21,10 +21,7 @@ GOOGLE_CX = '71a4cf86046244947'
 
 # Language Detection
 def detect_language(query):
-    if re.search('[\u0900-\u097F]', query):
-        return "hi"
-    else:
-        return "en"
+    return "hi" if re.search('[\u0900-\u097F]', query) else "en"
 
 # Classify Query with GPT-4
 def classify_query_with_gpt(query):
@@ -60,10 +57,8 @@ def get_time(location, timezone, lang="hi"):
         hours_12 = now.strftime('%I')
         minutes = now.strftime('%M')
         am_pm = now.strftime('%p')
-        if lang == "en":
-            return f"The current time in {location} is {hours_12}:{minutes} {am_pm}."
-        else:
-            return f"{location} का वर्तमान समय {hours_12}:{minutes} {am_pm} है।"
+        return (f"The current time in {location} is {hours_12}:{minutes} {am_pm}." if lang == "en" 
+                else f"{location} का वर्तमान समय {hours_12}:{minutes} {am_pm} है।")
     except Exception:
         return "There was a problem fetching the time." if lang == "en" else "समय का पता लगाने में समस्या हुई।"
 
@@ -109,12 +104,10 @@ def handle_general_knowledge_query(query, lang="hi"):
         return "Google search service error."
 
 # Refine with GPT
-
 def refine_answer_with_gpt(snippet_text, query, lang="hi"):
     try:
-        prompt = f"Given info:\n\"{snippet_text}\"\n\nAnswer the question: \"{query}\" clearly and concisely."
-        if lang != "en":
-            prompt = f"सूचना:\n\"{snippet_text}\"\n\nप्रश्न \"{query}\" का स्पष्ट और संक्षिप्त उत्तर दें।"
+        prompt = (f"Given info:\n\"{snippet_text}\"\n\nAnswer the question: \"{query}\" clearly and concisely." if lang == "en"
+                  else f"सूचना:\n\"{snippet_text}\"\n\nप्रश्न \"{query}\" का स्पष्ट और संक्षिप्त उत्तर दें।")
         completion = client.chat.completions.create(
             model="gpt-4",
             messages=[
@@ -139,14 +132,11 @@ def handle_external_query(query, lat, lng, history=[]):
         classification = classification_response.get('classification')
         gpt_location = classification_response.get('location')
 
-        if gpt_location != 'None':
+        if gpt_location and gpt_location.lower() != 'none':
             location_name = gpt_location
         elif lat != 'None' and lng != 'None':
             city_name, country_name = get_city_and_country_from_coordinates(lat, lng)
-            if city_name != "City not found":
-                location_name = f"{city_name}, {country_name}"
-            else:
-                location_name = "Pune, India"
+            location_name = f"{city_name}, {country_name}" if city_name != "City not found" else "Pune, India"
         else:
             location_name = "Pune, India"
 
@@ -154,10 +144,10 @@ def handle_external_query(query, lat, lng, history=[]):
             timezone = get_timezone_from_lat_lng(lat, lng) if lat != 'None' else "Asia/Kolkata"
             return get_time(location_name, timezone, lang)
 
-        elif "weather" in classification:
+        elif classification and "weather" in classification:
             return get_weather(location_name, lang=lang)
 
-        elif "general knowledge" in classification:
+        elif classification and "general knowledge" in classification:
             return handle_general_knowledge_query(query, lang)
 
         else:
