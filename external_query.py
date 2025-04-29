@@ -29,7 +29,7 @@ def classify_query_with_gpt(query):
         completion = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "Classify into time, weather, general knowledge. Extract location if any, else 'None'. Format: '<classification>: <location>'."},
+                {"role": "system", "content": "Classify into time, weather, general knowledge. If user asks outside then also understand it correctly. Extract location if any, else 'None'. Format: '<classification>: <location>'."},
                 {"role": "user", "content": f"Query: {query}"}
             ],
         )
