@@ -10,14 +10,14 @@ from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
 from openai import OpenAI
 
 # Environment Setup
-os.environ["OPENAI_API_KEY"] = "sk-FnkWOsdYrUaPc5t3PVs1zcp0w7ag5lOtn2EsrzULMpT3BlbkFJQaLK6EfGogyhHrSl3qEmgU8mDHHBcubT4s_RaHz0IA"
+os.environ["OPENAI_API_KEY"] = 
 
 # Instantiate OpenAI client
 client = OpenAI()
 
 # API Keys
-GOOGLE_API_KEY = 'AIzaSyD-3fOpAz4oO01d27GUuomrjqEAifbCYDU'
-GOOGLE_CX = '71a4cf86046244947'
+GOOGLE_API_KEY = 
+GOOGLE_CX = 
 
 # Language Detection
 def detect_language(query):
@@ -200,3 +200,4 @@ def get_timezone_from_lat_lng(lat, lng):
             return "Asia/Kolkata"
     except Exception:
         return "Asia/Kolkata"
+
