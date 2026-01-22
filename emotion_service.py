@@ -1,5 +1,5 @@
 import os
-os.environ["OPENAI_API_KEY"] = "sk-FnkWOsdYrUaPc5t3PVs1zcp0w7ag5lOtn2EsrzULMpT3BlbkFJQaLK6EfGogyhHrSl3qEmgU8mDHHBcubT4s_RaHz0IA"
+os.environ["OPENAI_API_KEY"] = 
 from openai import OpenAI
  
 # Instantiate the OpenAI client
@@ -17,4 +17,5 @@ def detect_emotion(sentence):
     # Access the response content
     # Changed from completion.choices[0].message["content"] to completion.choices[0].message.content
     emotion = completion.choices[0].message.content.strip()
+
     return emotion
