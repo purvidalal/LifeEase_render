@@ -1,5 +1,5 @@
 import os
-os.environ["OPENAI_API_KEY"] = "sk-FnkWOsdYrUaPc5t3PVs1zcp0w7ag5lOtn2EsrzULMpT3BlbkFJQaLK6EfGogyhHrSl3qEmgU8mDHHBcubT4s_RaHz0IA"
+os.environ["OPENAI_API_KEY"] = 
 from openai import OpenAI
  
 # Instantiate the OpenAI client
@@ -31,3 +31,4 @@ def detect_query(user_message, history=[]):
     query_type = completion.choices[0].message.content.strip().lower()
     query_type = query_type.strip("'\"")
     return query_type
+
